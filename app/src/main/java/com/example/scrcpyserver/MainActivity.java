@@ -9,6 +9,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.scrcpyserver.connection.ServerSocketHelper;
+import com.example.scrcpyserver.connection.ServerSocketThread;
 import com.example.scrcpyserver.device.Device;
 
 import java.io.IOException;
@@ -26,12 +27,8 @@ public class MainActivity extends AppCompatActivity {
         startServer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try {
-                    ServerSocketHelper connection = ServerSocketHelper.open(Integer.valueOf(portText.getText().toString()));
-                    connection.sendDeviceMeta(Device.getDeviceName());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                ServerSocketThread serverSocketThread = new ServerSocketThread(Integer.valueOf(portText.getText().toString()));
+                serverSocketThread.start();
             }
         });
     }
