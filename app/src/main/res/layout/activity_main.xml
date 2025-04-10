@@ -5,6 +5,23 @@
     android:gravity="center"
     android:orientation="vertical">
 
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Initializing ..."
+        android:textSize="18sp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/tv_debug"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Debug info"
+        android:layout_marginLeft="50dp"
+        android:layout_marginTop="16dp" />
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="150dp"
@@ -44,4 +61,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
+    <Button
+        android:id="@+id/startCapture"
+        android:text="startCapture"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/stopCapture"
+        android:text="stopCapture"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 </LinearLayout>

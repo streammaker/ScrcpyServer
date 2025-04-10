@@ -1,5 +1,8 @@
 package com.example.scrcpyserver.connection;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -13,18 +16,30 @@ public class ServerSocketHelper {
 
     private static final String TAG = ServerSocketHelper.class.getSimpleName();
     private final Socket videoSocket;
-    private static InputStream videoInputStream;
-    private static OutputStream videoOutputStream;
+    public static InputStream videoInputStream;
+    public static OutputStream videoOutputStream;
+    private static final int START_SERVER = 1;
+    private static final int CLIENT_CONNECTED = 2;
 
 
     public ServerSocketHelper(Socket videoSocket) {
         this.videoSocket = videoSocket;
     }
 
-    public static ServerSocketHelper open(int port) throws IOException {
+    public static ServerSocketHelper open(int port, Handler handler) throws IOException {
         Socket videoSocket = null;
         ServerSocket serverSocket = new ServerSocket(port);
+        Message message1 = new Message();
+        message1.what = START_SERVER;
+        handler.sendMessage(message1);
         videoSocket = serverSocket.accept();
+        String clientIP = videoSocket.getInetAddress().getHostAddress();
+        int clientPort = videoSocket.getPort();
+        Message message2 = new Message();
+        message2.what = CLIENT_CONNECTED;
+        message2.obj = clientIP;
+        message2.arg1 = clientPort;
+        handler.sendMessage(message2);
         videoInputStream = videoSocket.getInputStream();
         videoOutputStream = videoSocket.getOutputStream();
         return new ServerSocketHelper(videoSocket);
