@@ -37,16 +37,10 @@ import java.nio.ByteBuffer;
 public class ScreenCaptureService extends Service {
 
     private static final String TAG = ScreenCaptureService.class.getSimpleName();
-    private static final int NOTIFICATION_ID = 999;
+    private static final int NOTIFICATION_ID = 1001;
     private static final String CHANNEL_ID = "screen_capture_channel";
-    private static final int SCREEN_WIDTH = 1920;
-    private static final int SCREEN_HEIGHT = 1080;
-    private static final int BIT_RATE = 2_000_000;
     private MediaProjection mediaProjection;
-    private MediaCodec encoder;
-    private Surface encoderSurface;
-    private VirtualDisplay virtualDisplay;
-    DataOutputStream dos;
+    private ScreenCaptureThread screenCaptureThread;
 
     @Override
     public void onCreate() {
@@ -59,20 +53,19 @@ public class ScreenCaptureService extends Service {
         if (intent.getAction().equals("ACTION_START_CAPTURE")) {
             createNotificationChannel();
             Notification notification = buildNotification();
-            Log.d(TAG, "aaa");
             startForeground(NOTIFICATION_ID, notification);
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 //                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
 //            } else {
 //                startForeground(NOTIFICATION_ID, notification);
 //            }
-//            dos = new DataOutputStream(ServerSocketHelper.videoOutputStream);
-
             int resultCode = intent.getIntExtra("result_code", Activity.RESULT_CANCELED);
             Intent resultData = intent.getParcelableExtra("result_data");
             MediaProjectionManager projectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
             mediaProjection = projectionManager.getMediaProjection(resultCode, resultData);
-            startScreenCapture();
+            screenCaptureThread = new ScreenCaptureThread(mediaProjection, getResources().getDisplayMetrics().densityDpi);
+            screenCaptureThread.start();
+            Log.d("luozhenfeng", "1111");
             return START_STICKY;
         } else {
             stopSelf();
@@ -83,11 +76,12 @@ public class ScreenCaptureService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy !!!");
-        if (encoder != null) {
-            encoder.stop();
-            encoder.release();
+        screenCaptureThread.quit();
+        try {
+            screenCaptureThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        if (virtualDisplay != null) virtualDisplay.release();
         if (mediaProjection != null) mediaProjection.stop();
         super.onDestroy();
     }
@@ -120,83 +114,6 @@ public class ScreenCaptureService extends Service {
                 .setSmallIcon(R.drawable.small_icon)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.large_icon))
                 .build();
-    }
-
-    public void startScreenCapture() {
-        try {
-            initVideoEncoder();
-            createVirtualDisplay();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void initVideoEncoder() throws IOException {
-        MediaFormat format = MediaFormat.createVideoFormat(
-                MediaFormat.MIMETYPE_VIDEO_AVC, SCREEN_WIDTH, SCREEN_HEIGHT);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, 60);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//            format.setInteger(MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_LIMITED);
-//        }
-        encoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
-        encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-        encoder.setCallback(createEncoderCallback());
-        encoderSurface = encoder.createInputSurface();
-        encoder.start();
-    }
-
-    private MediaCodec.Callback createEncoderCallback() {
-        return new MediaCodec.Callback() {
-            @Override
-            public void onInputBufferAvailable(@NonNull MediaCodec mediaCodec, int i) {
-
-            }
-
-            @Override
-            public void onOutputBufferAvailable(@NonNull MediaCodec mediaCodec, int i, @NonNull MediaCodec.BufferInfo bufferInfo) {
-//                sendEncodedData(i, bufferInfo);
-            }
-
-            @Override
-            public void onError(@NonNull MediaCodec mediaCodec, @NonNull MediaCodec.CodecException e) {
-
-            }
-
-            @Override
-            public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec, @NonNull MediaFormat mediaFormat) {
-
-            }
-        };
-    }
-
-    private void createVirtualDisplay() {
-        int density = getResources().getDisplayMetrics().densityDpi;
-        virtualDisplay = mediaProjection.createVirtualDisplay(
-                "ScreenCast",
-                SCREEN_WIDTH, SCREEN_HEIGHT, density,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                encoderSurface, null, null);
-    }
-
-    private void sendEncodedData(int index, MediaCodec.BufferInfo info) {
-        ByteBuffer buffer = encoder.getOutputBuffer(index);
-        if (buffer == null) return;
-
-        byte[] packet = new byte[info.size];
-        buffer.get(packet);
-
-        try {
-            dos.writeInt(packet.length);
-            dos.write(packet);
-            dos.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            encoder.releaseOutputBuffer(index, false);
-        }
     }
 
 }
