@@ -29,6 +29,7 @@ public class ScreenCaptureThread extends Thread {
     private MediaCodec encoder;
     private Surface encoderSurface;
     private VirtualDisplay virtualDisplay;
+    private Handler handler;
     public ScreenCaptureThread(MediaProjection mediaProjection, int density) {
         dos = new DataOutputStream(ServerSocketHelper.videoOutputStream);
         this.mediaProjection = mediaProjection;
@@ -39,24 +40,46 @@ public class ScreenCaptureThread extends Thread {
         Log.d("luozhenfeng", "run 111 : " + Thread.currentThread().getName());
         //不设置子线程的looper的话encoder.setCallbackd设置的回调会绑定到主线程的looper,导致回调在主线程运行，网络请求出错
         Looper.prepare();
+        handler = new Handler(Looper.myLooper());
         startScreenCapture();
         Looper.loop();
+        releaseResources();
+        Log.d("luozhenfeng", "ScreenCaptureThread 结束");
     }
 
-    public void quit() {
-        if (Looper.myLooper() != null) {
-            Looper.myLooper().quitSafely();
-        }
+    private void releaseResources() {
+        Log.d("luozhenfeng", "releaseResources ...");
         try {
             if (encoder != null) {
                 encoder.stop();
                 encoder.release();
+                encoder = null;
+            }
+            if (virtualDisplay != null) {
+                virtualDisplay.release();
+                virtualDisplay = null;
+            }
+            if (mediaProjection != null) {
+                mediaProjection.stop();
+                mediaProjection = null;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (virtualDisplay != null) virtualDisplay.release();
-        if (mediaProjection != null) mediaProjection.stop();
+    }
+
+    public void quit() {
+        //需要先释放掉相关资源，否则会向死亡线程发起解码器回调
+        releaseResources();
+        if (handler != null) {
+            handler.post(() -> {
+                Log.d("luozhenfeng", "run 222 : " + Thread.currentThread().getName());
+                if (Looper.myLooper() != null) {
+                    Log.d("luozhenfeng", "run 333 : " + Thread.currentThread().getName());
+                    Looper.myLooper().quit();
+                }
+            });
+        }
     }
 
     public void startScreenCapture() {
@@ -104,7 +127,7 @@ public class ScreenCaptureThread extends Thread {
 
             @Override
             public void onOutputBufferAvailable(@NonNull MediaCodec mediaCodec, int i, @NonNull MediaCodec.BufferInfo bufferInfo) {
-                Log.d("luozhenfeng", "onOutputBufferAvailable : " + Thread.currentThread().getName());
+//                Log.d("luozhenfeng", "onOutputBufferAvailable : " + Thread.currentThread().getName());
                 sendEncodedData(i, bufferInfo);
             }
 
@@ -121,7 +144,7 @@ public class ScreenCaptureThread extends Thread {
     }
 
     private void sendEncodedData(int index, MediaCodec.BufferInfo info) {
-        Log.d("luozhenfeng", "sendEncodedData : " + Thread.currentThread().getName());
+//        Log.d("luozhenfeng", "sendEncodedData : " + Thread.currentThread().getName());
         ByteBuffer buffer = encoder.getOutputBuffer(index);
         if (buffer == null) return;
 
@@ -132,7 +155,7 @@ public class ScreenCaptureThread extends Thread {
             dos.writeInt(packet.length);
             dos.write(packet);
             dos.flush();
-            Log.d("luozhenfeng", index + "---" + info.size);
+//            Log.d("luozhenfeng", index + "---" + info.size);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

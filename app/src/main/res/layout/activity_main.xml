@@ -62,6 +62,13 @@
         android:layout_height="wrap_content" />
 
     <Button
+        android:id="@+id/stopServer"
+        android:text="stopServer"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
         android:id="@+id/startCapture"
         android:text="startCapture"
         android:layout_gravity="center"

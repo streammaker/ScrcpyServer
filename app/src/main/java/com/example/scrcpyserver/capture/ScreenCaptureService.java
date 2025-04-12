@@ -79,10 +79,15 @@ public class ScreenCaptureService extends Service {
         screenCaptureThread.quit();
         try {
             screenCaptureThread.join();
+            Log.d(TAG, "screenCaptureThread.join() !!!");
         } catch (InterruptedException e) {
+            Log.d(TAG, "screenCaptureThread.join() error");
             throw new RuntimeException(e);
         }
-        if (mediaProjection != null) mediaProjection.stop();
+        if (mediaProjection != null) {
+            mediaProjection.stop();
+            mediaProjection = null;
+        }
         super.onDestroy();
     }
 

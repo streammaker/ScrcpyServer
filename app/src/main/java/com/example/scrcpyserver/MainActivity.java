@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Context context;
     private Button startServer;
+    private Button stopServer;
     private Button startCapture;
     private Button stopCapture;
     private EditText ipText;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tv_status;
     private TextView tv_debug;
 
+    ServerSocketThread serverSocketThread;
     private MediaProjectionManager mediaProjectionManager;
     private ActivityResultLauncher launcher;
     private Handler handler;
@@ -57,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         context = this;
         setContentView(R.layout.activity_main);
@@ -88,8 +91,23 @@ public class MainActivity extends AppCompatActivity {
         });
 
         startServer.setOnClickListener(view -> {
-            ServerSocketThread serverSocketThread = new ServerSocketThread(Integer.valueOf(portText.getText().toString()), handler);
+            serverSocketThread = new ServerSocketThread(Integer.valueOf(portText.getText().toString()), handler);
             serverSocketThread.start();
+        });
+        stopServer.setOnClickListener(view -> {
+            if (serverSocketThread != null) {
+                serverSocketThread.stopServer();
+                try {
+                    serverSocketThread.join();
+                    Log.d(TAG, "serverSocketThread.join() !!!");
+                    tv_status.setText("Server has Stoped !!!");
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "serverSocketThread.join() error");
+                    throw new RuntimeException(e);
+                }
+            } else {
+                Log.d(TAG, "serverSocketThread == null");
+            }
         });
         startCapture.setOnClickListener(view -> {
             requestScreenCapturePermission();
@@ -98,6 +116,18 @@ public class MainActivity extends AppCompatActivity {
             stopCapture();
         });
 
+    }
+
+    @Override
+    protected void onStart() {
+        Log.d(TAG, "onStart()");
+        super.onStart();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy()");
+        super.onDestroy();
     }
 
     private void requestScreenCapturePermission() {
@@ -112,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         startServer = findViewById(R.id.startServer);
+        stopServer = findViewById(R.id.stopServer);
         startCapture = findViewById(R.id.startCapture);
         stopCapture = findViewById(R.id.stopCapture);
         ipText = findViewById(R.id.ipText);
