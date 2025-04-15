@@ -32,6 +32,8 @@ import com.example.scrcpyserver.capture.ScreenCaptureService;
 import com.example.scrcpyserver.connection.ServerSocketHelper;
 import com.example.scrcpyserver.connection.ServerSocketThread;
 import com.example.scrcpyserver.device.Device;
+import com.example.scrcpyserver.util.Constant;
+import com.example.scrcpyserver.util.Util;
 
 import java.io.IOException;
 
@@ -53,9 +55,6 @@ public class MainActivity extends AppCompatActivity {
     private MediaProjectionManager mediaProjectionManager;
     private ActivityResultLauncher launcher;
     private Handler handler;
-    private static final int START_SERVER = 1;
-    private static final int CLIENT_CONNECTED = 2;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +67,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
-                if (msg.what == START_SERVER) {
+                if (msg.what == Constant.START_SERVER) {
                     tv_status.setText("Server has Started !!!");
-                } else if (msg.what == CLIENT_CONNECTED) {
+                } else if (msg.what == Constant.CLIENT_CONNECTED) {
                     String clientIP = (String) msg.obj;
                     int clientPort = msg.arg1;
                     tv_status.setText("Client Connected --- Client IP : " + clientIP + " Client Port : " + clientPort);
@@ -79,11 +78,16 @@ public class MainActivity extends AppCompatActivity {
         };
         launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
-                serviceIntent.setAction("ACTION_START_CAPTURE");
-                serviceIntent.putExtra("result_code", result.getResultCode());
-                serviceIntent.putExtra("result_data", result.getData());
-                startService(serviceIntent);
+                if (Util.isServiceRunning(context, Constant.SCREENCAPTURESERVICE)) {
+                    Toast.makeText(context, "屏幕捕获服务已开启...", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "screenCaptureService has started");
+                } else {
+                    Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
+                    serviceIntent.setAction("ACTION_START_CAPTURE");
+                    serviceIntent.putExtra("result_code", result.getResultCode());
+                    serviceIntent.putExtra("result_data", result.getData());
+                    startService(serviceIntent);
+                }
             } else {
                 Toast.makeText(context, "授权失败", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "授权失败");
@@ -91,15 +95,26 @@ public class MainActivity extends AppCompatActivity {
         });
 
         startServer.setOnClickListener(view -> {
-            serverSocketThread = new ServerSocketThread(Integer.valueOf(portText.getText().toString()), handler);
-            serverSocketThread.start();
+            if (serverSocketThread == null || !serverSocketThread.isAlive()) {
+                Log.d(TAG, "start serverSocketThread");
+                serverSocketThread = new ServerSocketThread(Integer.valueOf(portText.getText().toString()), handler);
+                serverSocketThread.start();
+            } else {
+                Toast.makeText(context, "服务已经开启...", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "server has started");
+            }
         });
         stopServer.setOnClickListener(view -> {
+            if (Util.isServiceRunning(context, Constant.SCREENCAPTURESERVICE)) {
+                Log.d(TAG, "screencaptureservice is runnning, is stop now...");
+                stopCapture();
+            }
             if (serverSocketThread != null) {
                 serverSocketThread.stopServer();
                 try {
                     serverSocketThread.join();
                     Log.d(TAG, "serverSocketThread.join() !!!");
+                    serverSocketThread = null;
                     tv_status.setText("Server has Stoped !!!");
                 } catch (InterruptedException e) {
                     Log.d(TAG, "serverSocketThread.join() error");
@@ -136,8 +151,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopCapture() {
-        Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
-        stopService(serviceIntent);
+        if (Util.isServiceRunning(context, Constant.SCREENCAPTURESERVICE)) {
+            Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
+            stopService(serviceIntent);
+        } else {
+            Toast.makeText(context, "屏幕捕获服务未开启...", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "screenCaptureService is not started");
+        }
     }
 
     private void init() {

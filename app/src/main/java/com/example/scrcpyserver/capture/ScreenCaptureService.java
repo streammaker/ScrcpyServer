@@ -29,6 +29,7 @@ import androidx.core.app.NotificationCompat;
 import com.example.scrcpyserver.MainActivity;
 import com.example.scrcpyserver.R;
 import com.example.scrcpyserver.connection.ServerSocketHelper;
+import com.example.scrcpyserver.util.Constant;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -37,8 +38,6 @@ import java.nio.ByteBuffer;
 public class ScreenCaptureService extends Service {
 
     private static final String TAG = ScreenCaptureService.class.getSimpleName();
-    private static final int NOTIFICATION_ID = 1001;
-    private static final String CHANNEL_ID = "screen_capture_channel";
     private MediaProjection mediaProjection;
     private ScreenCaptureThread screenCaptureThread;
 
@@ -53,7 +52,7 @@ public class ScreenCaptureService extends Service {
         if (intent.getAction().equals("ACTION_START_CAPTURE")) {
             createNotificationChannel();
             Notification notification = buildNotification();
-            startForeground(NOTIFICATION_ID, notification);
+            startForeground(Constant.NOTIFICATION_ID, notification);
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 //                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
 //            } else {
@@ -101,7 +100,7 @@ public class ScreenCaptureService extends Service {
         NotificationManager mannager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
+                    Constant.CHANNEL_ID,
                     "Screen Capture",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
@@ -112,7 +111,7 @@ public class ScreenCaptureService extends Service {
     private Notification buildNotification() {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        return new NotificationCompat.Builder(this, Constant.CHANNEL_ID)
                 .setContentTitle("Screen Capture Active")
                 .setContentText("Streaming device screen...")
                 .setContentIntent(pendingIntent)

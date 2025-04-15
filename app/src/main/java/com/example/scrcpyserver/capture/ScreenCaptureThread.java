@@ -14,6 +14,7 @@ import android.view.Surface;
 import androidx.annotation.NonNull;
 
 import com.example.scrcpyserver.connection.ServerSocketHelper;
+import com.example.scrcpyserver.util.Constant;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -23,9 +24,6 @@ public class ScreenCaptureThread extends Thread {
     private DataOutputStream dos;
     private MediaProjection mediaProjection;
     int density;
-    private static final int SCREEN_WIDTH = 1920;
-    private static final int SCREEN_HEIGHT = 1080;
-    private static final int BIT_RATE = 2_000_000;
     private MediaCodec encoder;
     private Surface encoderSurface;
     private VirtualDisplay virtualDisplay;
@@ -50,14 +48,14 @@ public class ScreenCaptureThread extends Thread {
     private void releaseResources() {
         Log.d("luozhenfeng", "releaseResources ...");
         try {
+            if (virtualDisplay != null) {
+                virtualDisplay.release();
+                virtualDisplay = null;
+            }
             if (encoder != null) {
                 encoder.stop();
                 encoder.release();
                 encoder = null;
-            }
-            if (virtualDisplay != null) {
-                virtualDisplay.release();
-                virtualDisplay = null;
             }
             if (mediaProjection != null) {
                 mediaProjection.stop();
@@ -95,8 +93,8 @@ public class ScreenCaptureThread extends Thread {
     private void initVideoEncoder() throws IOException {
         Log.d("luozhenfeng", "initVideoEncoder : " + Thread.currentThread().getName());
         MediaFormat format = MediaFormat.createVideoFormat(
-                MediaFormat.MIMETYPE_VIDEO_AVC, SCREEN_WIDTH, SCREEN_HEIGHT);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
+                MediaFormat.MIMETYPE_VIDEO_AVC, Constant.SCREEN_WIDTH, Constant.SCREEN_HEIGHT);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, Constant.BIT_RATE);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, 60);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
@@ -113,7 +111,7 @@ public class ScreenCaptureThread extends Thread {
     private void createVirtualDisplay() {
         virtualDisplay = mediaProjection.createVirtualDisplay(
                 "ScreenCast",
-                SCREEN_WIDTH, SCREEN_HEIGHT, density,
+                Constant.SCREEN_WIDTH, Constant.SCREEN_HEIGHT, density,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 encoderSurface, null, null);
     }

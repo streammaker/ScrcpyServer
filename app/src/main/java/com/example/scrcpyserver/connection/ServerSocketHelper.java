@@ -6,6 +6,8 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.scrcpyserver.util.Constant;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,9 +21,6 @@ public class ServerSocketHelper {
     private static Socket videoSocket;
     public static InputStream videoInputStream;
     public static OutputStream videoOutputStream;
-    private static final int START_SERVER = 1;
-    private static final int CLIENT_CONNECTED = 2;
-
 
     public ServerSocketHelper(Socket videoSocket) {
         this.videoSocket = videoSocket;
@@ -32,14 +31,14 @@ public class ServerSocketHelper {
         try {
             serverSocket = new ServerSocket(port);
             Message message1 = new Message();
-            message1.what = START_SERVER;
+            message1.what = Constant.START_SERVER;
             handler.sendMessage(message1);
             Log.d(TAG, "start Server success, wait client connect!!!");
             videoSocket = serverSocket.accept();
             String clientIP = videoSocket.getInetAddress().getHostAddress();
             int clientPort = videoSocket.getPort();
             Message message2 = new Message();
-            message2.what = CLIENT_CONNECTED;
+            message2.what = Constant.CLIENT_CONNECTED;
             message2.obj = clientIP;
             message2.arg1 = clientPort;
             handler.sendMessage(message2);
