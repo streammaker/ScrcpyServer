@@ -18,9 +18,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ScrcpyServer"
         tools:targetApi="31">
-
         <activity
-            android:name=".MainActivity"
+            android:name=".ServerMainActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -30,10 +29,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".capture.ScreenCaptureService"
-            android:exported="true"
-            android:foregroundServiceType="mediaProjection"></service>
     </application>
 
 </manifest>
