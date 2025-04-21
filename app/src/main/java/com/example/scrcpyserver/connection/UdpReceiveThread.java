@@ -1,5 +1,7 @@
 package com.example.scrcpyserver.connection;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import com.example.scrcpyserver.ServerMainActivity;
@@ -13,19 +15,22 @@ import java.util.Arrays;
 public class UdpReceiveThread extends Thread {
 
     private static final String TAG = UdpReceiveThread.class.getSimpleName();
+    private volatile boolean isRunning = true;
     private Boolean isFirst;
     private DatagramSocket datagramSocket;
     private DatagramPacket datagramPacket;
+    private Handler handler;
 
-    public UdpReceiveThread() {
+    public UdpReceiveThread(Handler handler) {
         isFirst = true;
+        this.handler = handler;
     }
 
     @Override
     public void run() {
         try {
             datagramSocket = new DatagramSocket(Constant.UDP_RECEIVE_PORT);
-            while (true) {
+            while (isRunning) {
                 byte[] container = new byte[1024];
                 datagramPacket = new DatagramPacket(container, container.length);
                 datagramSocket.receive(datagramPacket);
@@ -38,12 +43,19 @@ public class UdpReceiveThread extends Thread {
                     isFirst = false;
                     String msg = new String(data, 0, len);
                     Log.d(TAG, "receive data : " + msg);
+                    Message message = new Message();
+                    message.what = Constant.CLIENT_CONNECTED;
+                    message.obj = msg;
+                    handler.sendMessage(message);
                 } else {
                     checkData(data, len);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            Log.d(TAG, "run() releaseResource");
+            releaseResource();
         }
     }
 
@@ -65,4 +77,18 @@ public class UdpReceiveThread extends Thread {
             }
         }
     }
+
+    public void stopRunning() {
+        isRunning = false;
+        releaseResource();
+    }
+
+    private void releaseResource() {
+        Log.d(TAG, "releaseResource()");
+        if (datagramSocket != null && !datagramSocket.isClosed()) {
+            datagramSocket.close();
+            datagramSocket = null;
+        }
+    }
+
 }

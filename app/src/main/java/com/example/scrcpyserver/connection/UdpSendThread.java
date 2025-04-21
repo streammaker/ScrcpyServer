@@ -30,6 +30,9 @@ public class UdpSendThread extends Thread {
             Looper.loop();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            Log.d(TAG, "run() releaseResource");
+            releaseResource();
         }
     }
 
@@ -55,6 +58,25 @@ public class UdpSendThread extends Thread {
         System.arraycopy(data, 0 , sendData, position, data.length);
         sendData[sendData.length - 1] = 0x07;
         return sendData;
+    }
+
+    public void stopRunning() {
+        if (handler != null) {
+            handler.post(() -> {
+                if (Looper.myLooper() != null) {
+                    Looper.myLooper().quit();
+                }
+                releaseResource();
+            });
+        }
+    }
+
+    private void releaseResource() {
+        Log.d(TAG, "releaseResource()");
+        if (datagramSocket != null && !datagramSocket.isClosed()) {
+            datagramSocket.close();
+            datagramSocket = null;
+        }
     }
 
 }

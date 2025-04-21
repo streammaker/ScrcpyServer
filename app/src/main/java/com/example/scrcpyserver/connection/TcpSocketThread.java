@@ -8,6 +8,7 @@ import android.view.SurfaceView;
 import com.example.scrcpyserver.util.Constant;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -17,11 +18,12 @@ import java.nio.ByteBuffer;
 public class TcpSocketThread extends Thread {
 
     private static final String TAG = TcpSocketThread.class.getSimpleName();
+    private volatile boolean isRunning = true;
     private SurfaceView surfaceView;
     private ServerSocket serverSocket;
     private Socket videoSocket;
     private InputStream videoInputStream;
-    DataInputStream dis;
+    private DataInputStream dis;
     private MediaCodec mDecoder;
 
     public TcpSocketThread(SurfaceView surfaceView) {
@@ -36,12 +38,15 @@ public class TcpSocketThread extends Thread {
             videoInputStream = videoSocket.getInputStream();
             dis = new DataInputStream(videoInputStream);
             initializeDecoder();
-            while (true) {
+            while (isRunning) {
                 Log.d(TAG, "prepare receive video data");
                 processNetworkPacket();
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            Log.d(TAG, "run() releaseResource");
+            releaseResource();
         }
     }
 
@@ -57,12 +62,21 @@ public class TcpSocketThread extends Thread {
         }
     }
 
-    private void processNetworkPacket() throws IOException {
-        int packetSize = dis.readInt();
-        if (packetSize <= 0) return;
-        byte[] frameData = new byte[packetSize];
-        dis.readFully(frameData, 0, packetSize);
-        feedDataToDecoder(frameData);
+    private void processNetworkPacket() {
+        try {
+            int packetSize = dis.readInt();
+            if (packetSize <= 0) {
+                Log.d(TAG, "packetSize <= 0");
+                return;
+            }
+            byte[] frameData = new byte[packetSize];
+            dis.readFully(frameData, 0, packetSize);
+            feedDataToDecoder(frameData);
+        } catch (EOFException e) {
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void feedDataToDecoder(byte[] data) {
@@ -91,6 +105,36 @@ public class TcpSocketThread extends Thread {
         int outputBufferIndex;
         while ((outputBufferIndex = mDecoder.dequeueOutputBuffer(bufferInfo, Constant.DECODER_TIMEOUT_US)) >= 0) {
             mDecoder.releaseOutputBuffer(outputBufferIndex, true);
+        }
+    }
+
+    public void stopRunning() {
+        isRunning = false;
+        releaseResource();
+    }
+
+    private void releaseResource() {
+        Log.d(TAG, "releaseResource()");
+        if (mDecoder != null) {
+            mDecoder.stop();
+            mDecoder.release();
+            mDecoder = null;
+        }
+        try {
+            if (dis != null) {
+                dis.close();
+                dis = null;
+            }
+            if (videoInputStream != null) {
+                videoInputStream.close();
+                videoInputStream = null;
+            }
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+                serverSocket = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

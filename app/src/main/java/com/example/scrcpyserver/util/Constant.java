@@ -11,4 +11,7 @@ public class Constant {
     public static final int UDP_SEND_PORT = 9001;
 
     public static final byte[] startCapture = new byte[] {0x01, 0x01};
+    public static final byte[] stopCapture = new byte[] {0x01, 0x02};
+
+    public static final int CLIENT_CONNECTED = 1;
 }
