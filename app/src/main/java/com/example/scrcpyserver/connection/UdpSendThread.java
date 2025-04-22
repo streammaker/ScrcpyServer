@@ -41,7 +41,8 @@ public class UdpSendThread extends Thread {
             handler.post(() -> {
                 byte[] sendData = packData(data);
                 try {
-                    datagramPacket = new DatagramPacket(sendData, 0, sendData.length, InetAddress.getByName(UdpHelper.clientIP), Constant.UDP_SEND_PORT);
+//                    datagramPacket = new DatagramPacket(sendData, 0, sendData.length, InetAddress.getByName(UdpHelper.clientIP), Constant.UDP_SEND_PORT);
+                    datagramPacket = new DatagramPacket(sendData, 0, sendData.length, InetAddress.getByName("192.168.31.86"), Constant.UDP_SEND_PORT);
                     datagramSocket.send(datagramPacket);
                     Log.d(TAG, "UdpSendThread 数据发送成功");
                 } catch (Exception e) {

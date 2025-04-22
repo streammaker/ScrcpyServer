@@ -10,6 +10,7 @@ import com.example.scrcpyserver.util.Constant;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.Arrays;
 
 public class UdpReceiveThread extends Thread {
@@ -40,6 +41,7 @@ public class UdpReceiveThread extends Thread {
                     String clientIP = datagramPacket.getAddress().getHostAddress();
                     int clientPort = datagramPacket.getPort();
                     UdpHelper.saveClientInfo(clientIP, clientPort);
+                    Log.d(TAG, "clientIP : " + clientIP + " clientPort : " + clientPort);
                     isFirst = false;
                     String msg = new String(data, 0, len);
                     Log.d(TAG, "receive data : " + msg);
@@ -47,6 +49,13 @@ public class UdpReceiveThread extends Thread {
                     message.what = Constant.CLIENT_CONNECTED;
                     message.obj = msg;
                     handler.sendMessage(message);
+
+                    //udp传输测试
+                    DatagramSocket datagramSocket1 = new DatagramSocket();
+                    byte[] data1 = "这是服务端的udp数据".getBytes();
+                    datagramPacket = new DatagramPacket(data1, 0, data1.length, InetAddress.getByName(clientIP), Constant.UDP_SEND_PORT);
+                    datagramSocket1.send(datagramPacket);
+                    Log.d(TAG, "udp传输测试");
                 } else {
                     checkData(data, len);
                 }

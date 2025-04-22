@@ -7,10 +7,14 @@ import android.view.SurfaceView;
 
 import com.example.scrcpyserver.util.Constant;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -35,13 +39,30 @@ public class TcpSocketThread extends Thread {
         try {
             serverSocket = new ServerSocket(Constant.TCP_RECEIVE_PORT);
             videoSocket = serverSocket.accept();
+            String clientIP = videoSocket.getInetAddress().getHostAddress();
+            int clientPort = videoSocket.getPort();
+            Log.d(TAG, "clientIP : " + clientIP + " clientPort : " + clientPort);
             videoInputStream = videoSocket.getInputStream();
             dis = new DataInputStream(videoInputStream);
-            initializeDecoder();
-            while (isRunning) {
-                Log.d(TAG, "prepare receive video data");
-                processNetworkPacket();
+
+            //tcp传输测试
+            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(videoSocket.getOutputStream()));
+            bufferedWriter.write("这是服务器发来的tcp测试数据");
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(videoInputStream));
+            String line = "";
+            Log.d(TAG, "tcp传输测试");
+            if ((line = bufferedReader.readLine()) != null) {
+                Log.d(TAG, "data : " + line);
             }
+
+
+//            initializeDecoder();
+//            while (isRunning) {
+//                Log.d(TAG, "prepare receive video data");
+//                processNetworkPacket();
+//            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -69,9 +90,11 @@ public class TcpSocketThread extends Thread {
                 Log.d(TAG, "packetSize <= 0");
                 return;
             }
+            Log.d(TAG, "packetSize : " + packetSize);
             byte[] frameData = new byte[packetSize];
             dis.readFully(frameData, 0, packetSize);
             feedDataToDecoder(frameData);
+            Log.d(TAG, "1111");
         } catch (EOFException e) {
 
         }catch (Exception e) {
@@ -81,9 +104,12 @@ public class TcpSocketThread extends Thread {
 
     private void feedDataToDecoder(byte[] data) {
         if (mDecoder == null) return;
+        Log.d(TAG, "2222");
         try {
             int inputBufferIndex = mDecoder.dequeueInputBuffer(Constant.DECODER_TIMEOUT_US);
+            Log.d(TAG, "3333" + " inputBufferIndex : " + inputBufferIndex);
             if (inputBufferIndex >= 0) {
+                Log.d(TAG, "4444");
                 ByteBuffer inputBuffer = mDecoder.getInputBuffer(inputBufferIndex);
                 inputBuffer.put(data);
                 mDecoder.queueInputBuffer(

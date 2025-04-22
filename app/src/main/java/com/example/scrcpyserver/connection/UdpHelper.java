@@ -21,8 +21,8 @@ public class UdpHelper {
     public void init() {
         udpReceiveThread = new UdpReceiveThread(handler);
         udpReceiveThread.start();
-        udpSendThread = new UdpSendThread();
-        udpSendThread.start();
+//        udpSendThread = new UdpSendThread();
+//        udpSendThread.start();
     }
 
     public void sendData(byte[] data) {
