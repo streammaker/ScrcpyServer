@@ -15,8 +15,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.scrcpyserver.connection.TcpHelper;
-import com.example.scrcpyserver.connection.UdpHelper;
-import com.example.scrcpyserver.connection.UdpSendThread;
 import com.example.scrcpyserver.util.Constant;
 
 public class ServerMainActivity extends AppCompatActivity {
@@ -27,7 +25,6 @@ public class ServerMainActivity extends AppCompatActivity {
     private Button stopCapture;
     private SurfaceView surfaceView;
     private TcpHelper tcpHelper;
-    private UdpHelper udpHelper;
     private Handler handler;
 
     @Override
@@ -45,12 +42,10 @@ public class ServerMainActivity extends AppCompatActivity {
                 }
             }
         };
-        tcpHelper = new TcpHelper(surfaceView);
-        udpHelper = new UdpHelper(handler);
+        tcpHelper = new TcpHelper(surfaceView, handler);
         tcpHelper.init();
-        udpHelper.init();
-        startCapture.setOnClickListener(view -> udpHelper.sendData(Constant.startCapture));
-        stopCapture.setOnClickListener(view -> udpHelper.sendData(Constant.stopCapture));
+        startCapture.setOnClickListener(view -> tcpHelper.sendData(Constant.startCapture));
+        stopCapture.setOnClickListener(view -> tcpHelper.sendData(Constant.stopCapture));
     }
 
     private void init() {
@@ -67,10 +62,6 @@ public class ServerMainActivity extends AppCompatActivity {
         if (tcpHelper != null) {
             tcpHelper.releaseResource();
             tcpHelper = null;
-        }
-        if (udpHelper != null) {
-            udpHelper.releaseResource();
-            udpHelper = null;
         }
     }
 }

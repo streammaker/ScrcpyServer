@@ -19,9 +19,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-public class TcpSocketThread extends Thread {
+public class TcpVideoThread extends Thread {
 
-    private static final String TAG = TcpSocketThread.class.getSimpleName();
+    private static final String TAG = TcpVideoThread.class.getSimpleName();
     private volatile boolean isRunning = true;
     private SurfaceView surfaceView;
     private ServerSocket serverSocket;
@@ -30,39 +30,25 @@ public class TcpSocketThread extends Thread {
     private DataInputStream dis;
     private MediaCodec mDecoder;
 
-    public TcpSocketThread(SurfaceView surfaceView) {
+    public TcpVideoThread(SurfaceView surfaceView) {
         this.surfaceView = surfaceView;
     }
 
     @Override
     public void run() {
         try {
-            serverSocket = new ServerSocket(Constant.TCP_RECEIVE_PORT);
+            serverSocket = new ServerSocket(Constant.TCP_VIDEO_RECEIVE_PORT);
             videoSocket = serverSocket.accept();
             String clientIP = videoSocket.getInetAddress().getHostAddress();
             int clientPort = videoSocket.getPort();
             Log.d(TAG, "clientIP : " + clientIP + " clientPort : " + clientPort);
             videoInputStream = videoSocket.getInputStream();
             dis = new DataInputStream(videoInputStream);
-
-            //tcp传输测试
-            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(videoSocket.getOutputStream()));
-            bufferedWriter.write("这是服务器发来的tcp测试数据");
-            bufferedWriter.newLine();
-            bufferedWriter.flush();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(videoInputStream));
-            String line = "";
-            Log.d(TAG, "tcp传输测试");
-            if ((line = bufferedReader.readLine()) != null) {
-                Log.d(TAG, "data : " + line);
+            initializeDecoder();
+            while (isRunning) {
+                Log.d(TAG, "prepare receive video data");
+                processNetworkPacket();
             }
-
-
-//            initializeDecoder();
-//            while (isRunning) {
-//                Log.d(TAG, "prepare receive video data");
-//                processNetworkPacket();
-//            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -154,6 +140,10 @@ public class TcpSocketThread extends Thread {
             if (videoInputStream != null) {
                 videoInputStream.close();
                 videoInputStream = null;
+            }
+            if (videoSocket != null && !videoSocket.isClosed()) {
+                videoSocket.close();
+                videoSocket = null;
             }
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
