@@ -81,9 +81,7 @@ public class TcpVideoThread extends Thread {
             dis.readFully(frameData, 0, packetSize);
             feedDataToDecoder(frameData);
             Log.d(TAG, "1111");
-        } catch (EOFException e) {
-
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

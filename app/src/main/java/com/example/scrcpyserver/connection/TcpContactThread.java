@@ -50,6 +50,11 @@ public class TcpContactThread extends Thread {
             message.obj = deviceName;
             mainHandler.sendMessage(message);
             contactOutputStream = contactSocket.getOutputStream();
+
+            //发送video服务器ip
+            contactOutputStream.write(Constant.VIDEO_SERVER_IP.getBytes());
+            Log.d(TAG, "发送video服务器ip");
+
             Looper.loop();
         } catch (Exception e) {
             e.printStackTrace();

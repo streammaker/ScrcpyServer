@@ -57,11 +57,11 @@ public class ServerMainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         Log.d(TAG, "onDestroy()");
         if (tcpHelper != null) {
             tcpHelper.releaseResource();
             tcpHelper = null;
         }
+        super.onDestroy();
     }
 }

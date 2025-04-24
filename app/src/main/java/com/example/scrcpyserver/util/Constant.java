@@ -12,4 +12,6 @@ public class Constant {
     public static final byte[] stopCapture = new byte[] {0x01, 0x02};
 
     public static final int CLIENT_CONNECTED = 1;
+
+    public static final String VIDEO_SERVER_IP = "192.168.0.227";
 }
