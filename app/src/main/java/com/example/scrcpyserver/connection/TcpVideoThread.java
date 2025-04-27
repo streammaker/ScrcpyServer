@@ -46,7 +46,7 @@ public class TcpVideoThread extends Thread {
             dis = new DataInputStream(videoInputStream);
             initializeDecoder();
             while (isRunning) {
-                Log.d(TAG, "prepare receive video data");
+//                Log.d(TAG, "prepare receive video data");
                 processNetworkPacket();
             }
         } catch (Exception e) {
@@ -80,7 +80,6 @@ public class TcpVideoThread extends Thread {
             byte[] frameData = new byte[packetSize];
             dis.readFully(frameData, 0, packetSize);
             feedDataToDecoder(frameData);
-            Log.d(TAG, "1111");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -88,12 +87,10 @@ public class TcpVideoThread extends Thread {
 
     private void feedDataToDecoder(byte[] data) {
         if (mDecoder == null) return;
-        Log.d(TAG, "2222");
         try {
             int inputBufferIndex = mDecoder.dequeueInputBuffer(Constant.DECODER_TIMEOUT_US);
-            Log.d(TAG, "3333" + " inputBufferIndex : " + inputBufferIndex);
+//            Log.d(TAG, "3333" + " inputBufferIndex : " + inputBufferIndex);
             if (inputBufferIndex >= 0) {
-                Log.d(TAG, "4444");
                 ByteBuffer inputBuffer = mDecoder.getInputBuffer(inputBufferIndex);
                 inputBuffer.put(data);
                 mDecoder.queueInputBuffer(
