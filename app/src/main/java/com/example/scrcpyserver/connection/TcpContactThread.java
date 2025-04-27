@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+import android.view.SurfaceView;
 
 import com.example.scrcpyserver.util.Constant;
 
@@ -26,8 +27,12 @@ public class TcpContactThread extends Thread {
     private OutputStream contactOutputStream;
     private Handler handler;
 
-    public TcpContactThread(Handler mainHandler) {
+    private UdpVideoThread udpVideoThread;
+    private SurfaceView surfaceView;
+
+    public TcpContactThread(Handler mainHandler, SurfaceView surfaceView) {
         this.mainHandler = mainHandler;
+        this.surfaceView = surfaceView;
     }
 
     @Override
@@ -54,6 +59,9 @@ public class TcpContactThread extends Thread {
             //发送video服务器ip
             contactOutputStream.write(Constant.VIDEO_SERVER_IP.getBytes());
             Log.d(TAG, "发送video服务器ip");
+
+            udpVideoThread = new UdpVideoThread(surfaceView);
+            udpVideoThread.start();
 
             Looper.loop();
         } catch (Exception e) {

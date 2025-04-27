@@ -18,10 +18,11 @@ public class TcpHelper {
     }
 
     public void init() {
-        tcpContactThread = new TcpContactThread(handler);
+        tcpContactThread = new TcpContactThread(handler, surfaceView);
         tcpContactThread.start();
-        tcpVideoThread = new TcpVideoThread(surfaceView);
-        tcpVideoThread.start();
+//        tcpVideoThread = new TcpVideoThread(surfaceView);
+//        tcpVideoThread.start();
+
     }
 
     public void sendData(byte[] data) {
